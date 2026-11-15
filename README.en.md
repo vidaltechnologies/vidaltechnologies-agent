@@ -21,7 +21,7 @@
   <img alt="SQL" src="https://img.shields.io/badge/SQL-PostgreSQL-4169E1?logo=postgresql&logoColor=white" />
 </p>
 
-![Workflow in n8n](docs/workflow.png)
+![Workflow in n8n](docs/workflow-en.png)
 
 ## About the project
 
@@ -45,8 +45,6 @@ process, the kind of solution Vidal Technologies delivers to its clients.
 5. **Missing information:** what we still need to know to write a proposal.
 6. **Questions for the next conversation:** 3 to 5, ready to use.
 7. **Recommended next step:** one concrete action, with channel and timing.
-
-The report itself is written in Portuguese, for the Brazilian sales team.
 
 ### How the score works
 
@@ -79,7 +77,7 @@ The report itself is written in Portuguese, for the Brazilian sales team.
 
 | Report on desktop | Report on mobile |
 | --- | --- |
-| <img src="docs/email-report-desktop.png" alt="Lead report on desktop" width="520" /> | <img src="docs/email-report-mobile.png" alt="Lead report on mobile" width="260" /> |
+| <img src="docs/email-report-desktop-en.png" alt="Lead report on desktop" width="520" /> | <img src="docs/email-report-mobile-en.png" alt="Lead report on mobile" width="260" /> |
 
 ## Database
 
@@ -114,7 +112,9 @@ account with SMTP.
    **Import from File**. Select [`workflow/lead-evaluation.json`](workflow/lead-evaluation.json).
 3. **Credentials:** create and pick the Supabase, Anthropic and SMTP credentials in the nodes.
 4. **Customize:** the priority rules live in the **Evaluate lead (Claude)** node. The
-   email that gets the report is in the **Email report to Vidal** node.
+   email that gets the report is in the **Email report to Vidal** node. The report is
+   written in Portuguese by default; for English or Spanish, set `REPORT_LANGUAGE` to
+   `en` or `es` in the **Build prompt** and **Read evaluation** nodes.
 5. **Test and publish:** run the flow with the test leads and, when everything looks
    right, click **Publish**.
 

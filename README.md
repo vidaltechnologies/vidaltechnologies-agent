@@ -21,7 +21,7 @@
   <img alt="SQL" src="https://img.shields.io/badge/SQL-PostgreSQL-4169E1?logo=postgresql&logoColor=white" />
 </p>
 
-![Fluxo no n8n](docs/workflow.png)
+![Fluxo no n8n](docs/workflow-pt.png)
 
 ## Sobre o projeto
 
@@ -78,7 +78,7 @@ entrega para os clientes.
 
 | Relatório no computador | Relatório no celular |
 | --- | --- |
-| <img src="docs/email-report-desktop.png" alt="Relatório do lead no computador" width="520" /> | <img src="docs/email-report-mobile.png" alt="Relatório do lead no celular" width="260" /> |
+| <img src="docs/email-report-desktop-pt.png" alt="Relatório do lead no computador" width="520" /> | <img src="docs/email-report-mobile-pt.png" alt="Relatório do lead no celular" width="260" /> |
 
 ## Banco de dados
 
@@ -113,7 +113,9 @@ Supabase e uma conta de e-mail com SMTP.
    **Import from File**. Selecione [`workflow/lead-evaluation.json`](workflow/lead-evaluation.json).
 3. **Credenciais:** crie e escolha nos nós as credenciais de Supabase, Anthropic e SMTP.
 4. **Personalizar:** as regras de prioridade ficam no nó **Evaluate lead (Claude)**. O
-   e-mail que recebe o relatório fica no nó **Email report to Vidal**.
+   e-mail que recebe o relatório fica no nó **Email report to Vidal**. O relatório sai
+   em português; para inglês ou espanhol, troque `REPORT_LANGUAGE` para `en` ou `es`
+   nos nós **Build prompt** e **Read evaluation**.
 5. **Testar e publicar:** rode o fluxo com os leads de teste e, quando estiver tudo
    certo, clique em **Publish**.
 
