@@ -1,0 +1,611 @@
+{
+  "name": "Vidal Technologies - Lead evaluation",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Vidal Technologies - Lead evaluation\n**Two ways in:**\n1. Webhook POST /avaliar-lead with JSON `{name, email, company, phone, source, message}` (source: email | website | whatsapp | referral | other). Call it from the email auto-reply flow after a new customer is saved.\n2. Every 30 min: customers with status = lead and the message in `notes`.\n\nReads the catalog from `services`, asks Claude for the 7-field report, saves it in `lead_evaluations`, sets the customer to `evaluated` and emails the report.\n\nCredentials: Anthropic, Supabase, SMTP (same as the email flow).",
+        "height": 300,
+        "width": 560
+      },
+      "id": "2bae38d0-150c-41d7-ad6c-ea4f612558fa",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -480,
+        -420
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "avaliar-lead",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "be1b6b6e-1762-4bc0-bc0a-db0cfe369251",
+      "name": "New lead (webhook)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -480,
+        0
+      ],
+      "webhookId": "4894fb77-8254-49c1-b14e-f9263293a929"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "customers",
+        "limit": 1,
+        "filterType": "manual",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "email",
+              "condition": "eq",
+              "keyValue": "={{ ($json.body.email || '').toLowerCase().trim() }}"
+            }
+          ]
+        }
+      },
+      "id": "d93ee267-9281-459e-a3ed-6b6cf0d97092",
+      "name": "Find customer",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -260,
+        0
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "5b4661bd-2aa7-45c7-b2f2-acf221c0a06f",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "2892971c-637a-4023-b6f6-a22dcd56015e",
+      "name": "Customer exists?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -40,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "tableId": "customers",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "name",
+              "fieldValue": "={{ $('New lead (webhook)').first().json.body.name || $('New lead (webhook)').first().json.body.email.split('@')[0] }}"
+            },
+            {
+              "fieldId": "email",
+              "fieldValue": "={{ $('New lead (webhook)').first().json.body.email.toLowerCase().trim() }}"
+            },
+            {
+              "fieldId": "company",
+              "fieldValue": "={{ $('New lead (webhook)').first().json.body.company || null }}"
+            },
+            {
+              "fieldId": "phone",
+              "fieldValue": "={{ $('New lead (webhook)').first().json.body.phone || null }}"
+            },
+            {
+              "fieldId": "source",
+              "fieldValue": "={{ $('New lead (webhook)').first().json.body.source || 'email' }}"
+            }
+          ]
+        }
+      },
+      "id": "3faf286b-1eed-4e41-ad38-f8eb4dbcc7eb",
+      "name": "Create customer",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        180,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Lead sent by another flow (email auto-reply, site form, WhatsApp) or by hand\nconst b = $('New lead (webhook)').first().json.body ?? {};\nconst found = $('Find customer').all().map(i => i.json).find(c => c && c.id);\nconst created = $('Create customer').isExecuted ? $('Create customer').first().json : null;\nconst c = found || created;\nif (!b.message) throw new Error('Lead without message: send at least \"email\" and \"message\"');\nreturn [{ json: { customer_id: c.id, name: c.name, email: c.email, company: c.company || b.company || '', phone: c.phone || b.phone || '', source: b.source || c.source || 'email', message: String(b.message).trim() } }];"
+      },
+      "id": "e8d0e1f3-0dfa-4803-8775-6c17f6c67e8a",
+      "name": "Lead from webhook",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        400,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 30
+            }
+          ]
+        }
+      },
+      "id": "6e613dd7-9120-4a7f-8f6e-e4029a60baaf",
+      "name": "Every 30 minutes",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -480,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "customers",
+        "returnAll": true,
+        "filterType": "manual",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "status",
+              "condition": "eq",
+              "keyValue": "lead"
+            }
+          ]
+        }
+      },
+      "id": "fa6bab0b-b177-4d0c-9e12-b91529c19dc5",
+      "name": "Get pending leads",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -260,
+        300
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Leads registered directly in Supabase (status = lead) with the message in \"notes\"\nreturn $input.all().map(i => i.json).filter(c => c.id && (c.notes || '').trim()).map(c => ({ json: {\n  customer_id: c.id, name: c.name, email: c.email, company: c.company || '', phone: c.phone || '', source: c.source || 'other', message: c.notes.trim() } }));"
+      },
+      "id": "b974b6ab-b12d-430a-b772-62c03b10fda5",
+      "name": "Leads with message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        400,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "services",
+        "returnAll": true,
+        "filterType": "manual",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "active",
+              "condition": "eq",
+              "keyValue": "true"
+            }
+          ]
+        }
+      },
+      "id": "30a4adae-3876-4eab-84b3-e7bec88fba57",
+      "name": "Get services",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        840,
+        140
+      ],
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Builds the prompt with the lead + the service catalog from Supabase\nconst services = $('Get services').all().map(i => i.json).filter(s => s.code);\nconst catalog = services.sort((a,b) => a.sort_order - b.sort_order)\n  .map(s => `- ${s.code} ${s.name} (${s.category}): ${s.description} Ideal para: ${s.ideal_for || '-'}. Inclui: ${(s.features || []).join(', ')}`).join('\\n');\nconst label = { email: 'e-mail', website: 'formulário do site', whatsapp: 'WhatsApp', referral: 'indicação', other: 'outro' };\nconst src = $('Lead from webhook').isExecuted ? $('Lead from webhook') : $('Leads with message');\nreturn src.all().map(i => { const l = i.json; return { json: { ...l, prompt: [\n  '# CATÁLOGO DA VIDAL TECHNOLOGIES', catalog,\n  'Fora do catálogo: aplicativos nativos para lojas, logo e identidade visual, gestão de redes sociais e tráfego pago, suporte de TI.',\n  '', '# LEAD',\n  `Canal: ${label[l.source] || l.source}`, `Nome: ${l.name || '(não informado)'}`, `Empresa: ${l.company || '(não informada)'}`,\n  `E-mail: ${l.email || '(não informado)'}`, `Telefone: ${l.phone || '(não informado)'}`, '', 'Mensagem:', l.message ].join('\\n') } }; });"
+      },
+      "id": "ee6e8cb4-c93c-46a0-ae1c-24f8f321fb32",
+      "name": "Build prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1060,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.prompt }}",
+        "messages": {
+          "messageValues": [
+            {
+              "type": "SystemMessagePromptTemplate",
+              "message": "Você é o avaliador de leads da Vidal Technologies, empresa que cria sites, aplicações web, automação de processos e agentes de IA para pequenas e médias empresas. Escreva sempre em português do Brasil, direto e sem jargão. Use só o que está no material do lead: nunca invente nome, empresa, orçamento ou prazo; o que não estiver claro vai em missing_info. Nas necessidades, marque com '(dedução)' o que você deduziu e o lead não disse. O catálogo de serviços vem na mensagem do usuário.\n\n## Como calcular a nota (0 a 100)\n\n| Critério | Pontos |\n|---|---|\n| Aderência ao catálogo: o pedido é algo que a Vidal entrega | 0 a 30 |\n| Clareza do problema: a dor está bem descrita | 0 a 20 |\n| Urgência: tem prazo ou motivo para resolver agora | 0 a 15 |\n| Decisor: quem escreveu decide ou está claro quem decide | 0 a 15 |\n| Perfil: pequena ou média empresa, ou profissional com negócio ativo, com sinais de que pode investir | 0 a 20 |\n\n- **Alta:** 70 ou mais. Próximo passo: contato no mesmo dia e convite para conversa.\n- **Média:** 40 a 69. Próximo passo: responder em até 2 dias úteis com perguntas e o catálogo.\n- **Baixa:** abaixo de 40. Próximo passo: resposta educada, catálogo e acompanhamento futuro (nutrição).\n\n## Regras importantes\n- Spam, propaganda, pedido de emprego ou fornecedor tentando vender: diga isso no resumo, prioridade Baixa, nota 0, e próximo passo \"Não responder\" ou \"Responder com mensagem padrão\".\n- Pedido fora do catálogo (ex.: aplicativo de celular nativo, design de logo, suporte de TI): aderência \"Fora do catálogo\" e sugira se vale indicar um parceiro.\n- Nunca prometa preço ou prazo: a Vidal só define isso na proposta.\n- Se vierem vários leads de uma vez, faça um relatório para cada, e no final uma tabela curta ordenada pela nota.\n\n\n# FORMATO DE SAÍDA\nResponda APENAS com um JSON válido, sem texto antes ou depois e sem ```, com exatamente estas chaves:\n{\"summary\": \"2 a 4 frases\", \"needs\": [\"...\"], \"fit\": \"Alta|Média|Baixa|Fora do catálogo\", \"recommended_services\": [\"I2\"], \"fit_reason\": \"...\", \"priority\": \"Alta|Média|Baixa\", \"score\": 0, \"score_breakdown\": \"aderência 25 + clareza 15 + urgência 10 + decisor 10 + perfil 15 = 75\", \"priority_justification\": \"...\", \"missing_info\": [\"...\"], \"next_questions\": [\"...\"], \"next_step\": \"...\"}"
+            }
+          ]
+        }
+      },
+      "id": "4331d25d-23f5-40f5-a63c-f9683ede9175",
+      "name": "Evaluate lead (Claude)",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.4,
+      "position": [
+        1280,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "claude-sonnet-5-5",
+          "cachedResultName": "Claude Sonnet 5.5"
+        },
+        "options": {
+          "maxTokensToSample": 2000,
+          "temperature": 0.2
+        }
+      },
+      "id": "2cd0bada-3e07-45d6-8d28-04c86551271d",
+      "name": "Claude",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [
+        1280,
+        340
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Reads Claude's JSON, maps it to the database enums and builds the email report\nconst leads = $('Build prompt').all().map(i => i.json);\nconst P = { 'Alta': 'high', 'Média': 'medium', 'Media': 'medium', 'Baixa': 'low' };\nconst F = { 'Alta': 'high', 'Média': 'medium', 'Media': 'medium', 'Baixa': 'low', 'Fora do catálogo': 'out_of_scope' };\nconst SRC = { email: 'E-mail', website: 'Formulário do site', whatsapp: 'WhatsApp', referral: 'Indicação', other: 'Outro' };\nconst esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');\nconst ul = a => '<ul>' + (a || []).map(x => `<li>${esc(x)}</li>`).join('') + '</ul>';\nconst ol = a => '<ol>' + (a || []).map(x => `<li>${esc(x)}</li>`).join('') + '</ol>';\nreturn $input.all().map((item, idx) => {\n  const lead = leads[idx];\n  const raw = (item.json.text || '').trim().replace(/^```(json)?/i, '').replace(/```$/, '').trim();\n  let ev; try { ev = JSON.parse(raw); } catch (e) { throw new Error('Claude did not return valid JSON: ' + raw.slice(0, 300)); }\n  const score = Math.max(0, Math.min(100, Math.round(Number(ev.score) || 0)));\n  const color = { high: '#1f9d55', medium: '#FBC105', low: '#888888' }[P[ev.priority]] || '#888888';\n  const html = `<div style=\"font-family:Arial,sans-serif;max-width:640px;margin:auto;color:#111\">\n <div style=\"background:#000;background-image:linear-gradient(#000,#000);padding:18px 24px\"><img src=\"https://vidaltechnologies.com.br/catalogo/logo-email.png\" alt=\"vidal technologies\" height=\"28\" style=\"display:block;height:28px\"><div style=\"color:#FBC105;font-size:13px;letter-spacing:.08em;text-transform:uppercase;margin-top:8px\">Avaliação de lead</div></div>\n <div style=\"padding:20px 24px;border:1px solid #eee;background:#fff\">\n  <p style=\"margin:0 0 6px\"><b>${esc(lead.name || 'Lead sem nome')}</b> · ${esc(lead.company || 'empresa não informada')} · ${esc(SRC[lead.source] || lead.source)}</p>\n  <p style=\"margin:0 0 16px;color:#555\">${esc(lead.email)} ${esc(lead.phone)}</p>\n  <p style=\"display:inline-block;background:${color};color:#000;padding:6px 12px;border-radius:999px;font-weight:bold\">Prioridade ${esc(ev.priority)} · ${score}/100</p>\n  <h3>1. Resumo do lead</h3><p>${esc(ev.summary)}</p>\n  <h3>2. Necessidades e problemas</h3>${ul(ev.needs)}\n  <h3>3. Aderência às soluções</h3><p><b>${esc(ev.fit)}</b> · ${esc((ev.recommended_services || []).join(', '))}<br>${esc(ev.fit_reason)}</p>\n  <h3>4. Prioridade sugerida</h3><p><b>${esc(ev.priority)} (${score}/100)</b> · ${esc(ev.score_breakdown)}<br>${esc(ev.priority_justification)}</p>\n  <h3>5. Informações que ainda faltam</h3>${ul(ev.missing_info)}\n  <h3>6. Perguntas para a próxima conversa</h3>${ol(ev.next_questions)}\n  <h3>7. Próximo passo recomendado</h3><p><b>${esc(ev.next_step)}</b></p>\n  <hr style=\"border:none;border-top:1px solid #eee\"><p style=\"color:#888;font-size:12px\">Mensagem original:<br>${esc(lead.message).replace(/\\n/g,'<br>')}</p>\n </div></div>`;\n  return { json: { ...lead, ev, score, priority: P[ev.priority] || 'low', fit: F[ev.fit] || 'low',\n    email_subject: `[Lead ${ev.priority} · ${score}] ${lead.name || lead.email || 'novo lead'}`, email_html: html } };\n});"
+      },
+      "id": "e33f03b8-2d90-4352-a096-00fc5a99801b",
+      "name": "Read evaluation",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1540,
+        140
+      ]
+    },
+    {
+      "parameters": {
+        "tableId": "lead_evaluations",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "customer_id",
+              "fieldValue": "={{ $json.customer_id }}"
+            },
+            {
+              "fieldId": "source",
+              "fieldValue": "={{ $json.source }}"
+            },
+            {
+              "fieldId": "message",
+              "fieldValue": "={{ $json.message }}"
+            },
+            {
+              "fieldId": "summary",
+              "fieldValue": "={{ $json.ev.summary }}"
+            },
+            {
+              "fieldId": "needs",
+              "fieldValue": "={{ $json.ev.needs }}"
+            },
+            {
+              "fieldId": "fit",
+              "fieldValue": "={{ $json.fit }}"
+            },
+            {
+              "fieldId": "recommended_services",
+              "fieldValue": "={{ $json.ev.recommended_services }}"
+            },
+            {
+              "fieldId": "fit_reason",
+              "fieldValue": "={{ $json.ev.fit_reason }}"
+            },
+            {
+              "fieldId": "priority",
+              "fieldValue": "={{ $json.priority }}"
+            },
+            {
+              "fieldId": "score",
+              "fieldValue": "={{ $json.score }}"
+            },
+            {
+              "fieldId": "score_breakdown",
+              "fieldValue": "={{ $json.ev.score_breakdown }}"
+            },
+            {
+              "fieldId": "priority_justification",
+              "fieldValue": "={{ $json.ev.priority_justification }}"
+            },
+            {
+              "fieldId": "missing_info",
+              "fieldValue": "={{ $json.ev.missing_info }}"
+            },
+            {
+              "fieldId": "next_questions",
+              "fieldValue": "={{ $json.ev.next_questions }}"
+            },
+            {
+              "fieldId": "next_step",
+              "fieldValue": "={{ $json.ev.next_step }}"
+            },
+            {
+              "fieldId": "model",
+              "fieldValue": "claude-sonnet-5-5"
+            },
+            {
+              "fieldId": "raw_output",
+              "fieldValue": "={{ JSON.stringify($json.ev) }}"
+            }
+          ]
+        }
+      },
+      "id": "250768de-d45a-46d0-af18-7ff7508542cf",
+      "name": "Save evaluation",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1760,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "customers",
+        "filterType": "manual",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Read evaluation').item.json.customer_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "status",
+              "fieldValue": "evaluated"
+            }
+          ]
+        }
+      },
+      "id": "e1313c80-5715-456c-be13-7b97a318f619",
+      "name": "Mark as evaluated",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1980,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "contato@vidaltechnologies.com.br",
+        "toEmail": "contato@vidaltechnologies.com.br",
+        "subject": "={{ $json.email_subject }}",
+        "html": "={{ $json.email_html }}",
+        "options": {}
+      },
+      "id": "bd77a3d3-202d-4716-af29-4a39eef151ca",
+      "name": "Email report to Vidal",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1760,
+        240
+      ]
+    }
+  ],
+  "connections": {
+    "New lead (webhook)": {
+      "main": [
+        [
+          {
+            "node": "Find customer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find customer": {
+      "main": [
+        [
+          {
+            "node": "Customer exists?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Customer exists?": {
+      "main": [
+        [
+          {
+            "node": "Lead from webhook",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create customer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create customer": {
+      "main": [
+        [
+          {
+            "node": "Lead from webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lead from webhook": {
+      "main": [
+        [
+          {
+            "node": "Get services",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Every 30 minutes": {
+      "main": [
+        [
+          {
+            "node": "Get pending leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get pending leads": {
+      "main": [
+        [
+          {
+            "node": "Leads with message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Leads with message": {
+      "main": [
+        [
+          {
+            "node": "Get services",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get services": {
+      "main": [
+        [
+          {
+            "node": "Build prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build prompt": {
+      "main": [
+        [
+          {
+            "node": "Evaluate lead (Claude)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Evaluate lead (Claude)",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Evaluate lead (Claude)": {
+      "main": [
+        [
+          {
+            "node": "Read evaluation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read evaluation": {
+      "main": [
+        [
+          {
+            "node": "Save evaluation",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Email report to Vidal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save evaluation": {
+      "main": [
+        [
+          {
+            "node": "Mark as evaluated",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}
