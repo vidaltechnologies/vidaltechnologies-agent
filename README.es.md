@@ -21,7 +21,7 @@
   <img alt="SQL" src="https://img.shields.io/badge/SQL-PostgreSQL-4169E1?logo=postgresql&logoColor=white" />
 </p>
 
-![Flujo en n8n](docs/workflow.png)
+![Flujo en n8n](docs/workflow-es.png)
 
 ## Sobre el proyecto
 
@@ -45,8 +45,6 @@ proceso comercial, el tipo de solución que Vidal Technologies entrega a sus cli
 5. **Información pendiente:** lo que falta saber para armar la propuesta.
 6. **Preguntas para la próxima conversación:** de 3 a 5, listas para usar.
 7. **Siguiente paso recomendado:** una acción concreta, con canal y plazo.
-
-El informe se escribe en portugués, para el equipo comercial en Brasil.
 
 ### Cómo se calcula la nota
 
@@ -79,7 +77,7 @@ El informe se escribe en portugués, para el equipo comercial en Brasil.
 
 | Informe en la computadora | Informe en el celular |
 | --- | --- |
-| <img src="docs/email-report-desktop.png" alt="Informe del lead en la computadora" width="520" /> | <img src="docs/email-report-mobile.png" alt="Informe del lead en el celular" width="260" /> |
+| <img src="docs/email-report-desktop-es.png" alt="Informe del lead en la computadora" width="520" /> | <img src="docs/email-report-mobile-es.png" alt="Informe del lead en el celular" width="260" /> |
 
 ## Base de datos
 
@@ -114,7 +112,9 @@ Supabase y una cuenta de correo con SMTP.
    **Import from File**. Selecciona [`workflow/lead-evaluation.json`](workflow/lead-evaluation.json).
 3. **Credenciales:** crea y elige en los nodos las credenciales de Supabase, Anthropic y SMTP.
 4. **Personalizar:** las reglas de prioridad están en el nodo **Evaluate lead (Claude)**.
-   El correo que recibe el informe está en el nodo **Email report to Vidal**.
+   El correo que recibe el informe está en el nodo **Email report to Vidal**. El informe
+   sale en portugués; para inglés o español, cambia `REPORT_LANGUAGE` a `en` o `es` en
+   los nodos **Build prompt** y **Read evaluation**.
 5. **Probar y publicar:** ejecuta el flujo con los leads de prueba y, cuando todo esté
    bien, haz clic en **Publish**.
 

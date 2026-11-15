@@ -7,7 +7,7 @@
         "height": 300,
         "width": 560
       },
-      "id": "2bae38d0-150c-41d7-ad6c-ea4f612558fa",
+      "id": "a87f276d-9582-4d77-a1ba-ba5d678543a9",
       "name": "Sticky Note",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
@@ -23,7 +23,7 @@
         "responseMode": "lastNode",
         "options": {}
       },
-      "id": "be1b6b6e-1762-4bc0-bc0a-db0cfe369251",
+      "id": "55e94cb2-62be-4295-b71b-bab29e7b046c",
       "name": "New lead (webhook)",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
@@ -31,7 +31,7 @@
         -480,
         0
       ],
-      "webhookId": "4894fb77-8254-49c1-b14e-f9263293a929"
+      "webhookId": "1e8a7938-49f1-44f0-b6ef-27d8367da9f1"
     },
     {
       "parameters": {
@@ -50,7 +50,7 @@
           ]
         }
       },
-      "id": "d93ee267-9281-459e-a3ed-6b6cf0d97092",
+      "id": "075c440b-f7c5-4db3-bc16-a840b9918812",
       "name": "Find customer",
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
@@ -70,7 +70,7 @@
           },
           "conditions": [
             {
-              "id": "5b4661bd-2aa7-45c7-b2f2-acf221c0a06f",
+              "id": "0fadd7cd-941b-4109-a5bd-a6578d3795f3",
               "leftValue": "={{ $json.id }}",
               "rightValue": "",
               "operator": {
@@ -84,7 +84,7 @@
         },
         "options": {}
       },
-      "id": "2892971c-637a-4023-b6f6-a22dcd56015e",
+      "id": "3a1715c7-30de-44d4-b300-c69fca7441b5",
       "name": "Customer exists?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
@@ -121,7 +121,7 @@
           ]
         }
       },
-      "id": "3faf286b-1eed-4e41-ad38-f8eb4dbcc7eb",
+      "id": "e8a9e845-4c08-4779-a1f7-1e967a1c513a",
       "name": "Create customer",
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
@@ -134,7 +134,7 @@
       "parameters": {
         "jsCode": "// Lead sent by another flow (email auto-reply, site form, WhatsApp) or by hand\nconst b = $('New lead (webhook)').first().json.body ?? {};\nconst found = $('Find customer').all().map(i => i.json).find(c => c && c.id);\nconst created = $('Create customer').isExecuted ? $('Create customer').first().json : null;\nconst c = found || created;\nif (!b.message) throw new Error('Lead without message: send at least \"email\" and \"message\"');\nreturn [{ json: { customer_id: c.id, name: c.name, email: c.email, company: c.company || b.company || '', phone: c.phone || b.phone || '', source: b.source || c.source || 'email', message: String(b.message).trim() } }];"
       },
-      "id": "e8d0e1f3-0dfa-4803-8775-6c17f6c67e8a",
+      "id": "a2fc37a8-6db0-477e-a577-0291b7a79db6",
       "name": "Lead from webhook",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -154,7 +154,7 @@
           ]
         }
       },
-      "id": "6e613dd7-9120-4a7f-8f6e-e4029a60baaf",
+      "id": "56de6403-2b0b-4058-b849-070f66132801",
       "name": "Every 30 minutes",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
@@ -180,7 +180,7 @@
           ]
         }
       },
-      "id": "fa6bab0b-b177-4d0c-9e12-b91529c19dc5",
+      "id": "c51464ac-98d8-412c-8220-d4f0f4cc11b8",
       "name": "Get pending leads",
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
@@ -194,7 +194,7 @@
       "parameters": {
         "jsCode": "// Leads registered directly in Supabase (status = lead) with the message in \"notes\"\nreturn $input.all().map(i => i.json).filter(c => c.id && (c.notes || '').trim()).map(c => ({ json: {\n  customer_id: c.id, name: c.name, email: c.email, company: c.company || '', phone: c.phone || '', source: c.source || 'other', message: c.notes.trim() } }));"
       },
-      "id": "b974b6ab-b12d-430a-b772-62c03b10fda5",
+      "id": "9c369d87-50d3-424e-8cc8-79fb31164f5e",
       "name": "Leads with message",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -220,7 +220,7 @@
           ]
         }
       },
-      "id": "30a4adae-3876-4eab-84b3-e7bec88fba57",
+      "id": "e8dcaff6-b154-41d5-a6a4-2427042d2d1b",
       "name": "Get services",
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
@@ -232,9 +232,9 @@
     },
     {
       "parameters": {
-        "jsCode": "// Builds the prompt with the lead + the service catalog from Supabase\nconst services = $('Get services').all().map(i => i.json).filter(s => s.code);\nconst catalog = services.sort((a,b) => a.sort_order - b.sort_order)\n  .map(s => `- ${s.code} ${s.name} (${s.category}): ${s.description} Ideal para: ${s.ideal_for || '-'}. Inclui: ${(s.features || []).join(', ')}`).join('\\n');\nconst label = { email: 'e-mail', website: 'formulário do site', whatsapp: 'WhatsApp', referral: 'indicação', other: 'outro' };\nconst src = $('Lead from webhook').isExecuted ? $('Lead from webhook') : $('Leads with message');\nreturn src.all().map(i => { const l = i.json; return { json: { ...l, prompt: [\n  '# CATÁLOGO DA VIDAL TECHNOLOGIES', catalog,\n  'Fora do catálogo: aplicativos nativos para lojas, logo e identidade visual, gestão de redes sociais e tráfego pago, suporte de TI.',\n  '', '# LEAD',\n  `Canal: ${label[l.source] || l.source}`, `Nome: ${l.name || '(não informado)'}`, `Empresa: ${l.company || '(não informada)'}`,\n  `E-mail: ${l.email || '(não informado)'}`, `Telefone: ${l.phone || '(não informado)'}`, '', 'Mensagem:', l.message ].join('\\n') } }; });"
+        "jsCode": "// Builds the prompt with the lead + the service catalog from Supabase\n// Report language: 'pt', 'en' or 'es' (also change it in the \"Read evaluation\" node)\nconst REPORT_LANGUAGE = 'pt';\nconst LANG_NAME = { pt: 'português do Brasil', en: 'inglês (English)', es: 'espanhol (Español)' };\nconst services = $('Get services').all().map(i => i.json).filter(s => s.code);\nconst catalog = services.sort((a,b) => a.sort_order - b.sort_order)\n  .map(s => `- ${s.code} ${s.name} (${s.category}): ${s.description} Ideal para: ${s.ideal_for || '-'}. Inclui: ${(s.features || []).join(', ')}`).join('\\n');\nconst label = { email: 'e-mail', website: 'formulário do site', whatsapp: 'WhatsApp', referral: 'indicação', other: 'outro' };\nconst src = $('Lead from webhook').isExecuted ? $('Lead from webhook') : $('Leads with message');\nreturn src.all().map(i => { const l = i.json; return { json: { ...l, prompt: [\n  '# CATÁLOGO DA VIDAL TECHNOLOGIES', catalog,\n  'Fora do catálogo: aplicativos nativos para lojas, logo e identidade visual, gestão de redes sociais e tráfego pago, suporte de TI.',\n  '', '# LEAD',\n  `Canal: ${label[l.source] || l.source}`, `Nome: ${l.name || '(não informado)'}`, `Empresa: ${l.company || '(não informada)'}`,\n  `E-mail: ${l.email || '(não informado)'}`, `Telefone: ${l.phone || '(não informado)'}`, '', 'Mensagem:', l.message, '', `Idioma do relatório: ${LANG_NAME[REPORT_LANGUAGE] || LANG_NAME.pt}` ].join('\\n') } }; });"
       },
-      "id": "ee6e8cb4-c93c-46a0-ae1c-24f8f321fb32",
+      "id": "4d0e7bc8-6436-46c7-a55d-7eca21353e3f",
       "name": "Build prompt",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -251,12 +251,12 @@
           "messageValues": [
             {
               "type": "SystemMessagePromptTemplate",
-              "message": "Você é o avaliador de leads da Vidal Technologies, empresa que cria sites, aplicações web, automação de processos e agentes de IA para pequenas e médias empresas. Escreva sempre em português do Brasil, direto e sem jargão. Use só o que está no material do lead: nunca invente nome, empresa, orçamento ou prazo; o que não estiver claro vai em missing_info. Nas necessidades, marque com '(dedução)' o que você deduziu e o lead não disse. O catálogo de serviços vem na mensagem do usuário.\n\n## Como calcular a nota (0 a 100)\n\n| Critério | Pontos |\n|---|---|\n| Aderência ao catálogo: o pedido é algo que a Vidal entrega | 0 a 30 |\n| Clareza do problema: a dor está bem descrita | 0 a 20 |\n| Urgência: tem prazo ou motivo para resolver agora | 0 a 15 |\n| Decisor: quem escreveu decide ou está claro quem decide | 0 a 15 |\n| Perfil: pequena ou média empresa, ou profissional com negócio ativo, com sinais de que pode investir | 0 a 20 |\n\n- **Alta:** 70 ou mais. Próximo passo: contato no mesmo dia e convite para conversa.\n- **Média:** 40 a 69. Próximo passo: responder em até 2 dias úteis com perguntas e o catálogo.\n- **Baixa:** abaixo de 40. Próximo passo: resposta educada, catálogo e acompanhamento futuro (nutrição).\n\n## Regras importantes\n- Spam, propaganda, pedido de emprego ou fornecedor tentando vender: diga isso no resumo, prioridade Baixa, nota 0, e próximo passo \"Não responder\" ou \"Responder com mensagem padrão\".\n- Pedido fora do catálogo (ex.: aplicativo de celular nativo, design de logo, suporte de TI): aderência \"Fora do catálogo\" e sugira se vale indicar um parceiro.\n- Nunca prometa preço ou prazo: a Vidal só define isso na proposta.\n- Se vierem vários leads de uma vez, faça um relatório para cada, e no final uma tabela curta ordenada pela nota.\n\n\n# FORMATO DE SAÍDA\nResponda APENAS com um JSON válido, sem texto antes ou depois e sem ```, com exatamente estas chaves:\n{\"summary\": \"2 a 4 frases\", \"needs\": [\"...\"], \"fit\": \"Alta|Média|Baixa|Fora do catálogo\", \"recommended_services\": [\"I2\"], \"fit_reason\": \"...\", \"priority\": \"Alta|Média|Baixa\", \"score\": 0, \"score_breakdown\": \"aderência 25 + clareza 15 + urgência 10 + decisor 10 + perfil 15 = 75\", \"priority_justification\": \"...\", \"missing_info\": [\"...\"], \"next_questions\": [\"...\"], \"next_step\": \"...\"}"
+              "message": "Você é o avaliador de leads da Vidal Technologies, empresa que cria sites, aplicações web, automação de processos e agentes de IA para pequenas e médias empresas. Escreva no idioma pedido no fim da mensagem do usuário (padrão: português do Brasil), direto e sem jargão. Mesmo em outro idioma, os valores de fit e priority continuam exatamente como no formato abaixo, em português. Use só o que está no material do lead: nunca invente nome, empresa, orçamento ou prazo; o que não estiver claro vai em missing_info. Nas necessidades, marque com '(dedução)' o que você deduziu e o lead não disse. O catálogo de serviços vem na mensagem do usuário.\n\n## Como calcular a nota (0 a 100)\n\n| Critério | Pontos |\n|---|---|\n| Aderência ao catálogo: o pedido é algo que a Vidal entrega | 0 a 30 |\n| Clareza do problema: a dor está bem descrita | 0 a 20 |\n| Urgência: tem prazo ou motivo para resolver agora | 0 a 15 |\n| Decisor: quem escreveu decide ou está claro quem decide | 0 a 15 |\n| Perfil: pequena ou média empresa, ou profissional com negócio ativo, com sinais de que pode investir | 0 a 20 |\n\n- **Alta:** 70 ou mais. Próximo passo: contato no mesmo dia e convite para conversa.\n- **Média:** 40 a 69. Próximo passo: responder em até 2 dias úteis com perguntas e o catálogo.\n- **Baixa:** abaixo de 40. Próximo passo: resposta educada, catálogo e acompanhamento futuro (nutrição).\n\n## Regras importantes\n- Spam, propaganda, pedido de emprego ou fornecedor tentando vender: diga isso no resumo, prioridade Baixa, nota 0, e próximo passo \"Não responder\" ou \"Responder com mensagem padrão\".\n- Pedido fora do catálogo (ex.: aplicativo de celular nativo, design de logo, suporte de TI): aderência \"Fora do catálogo\" e sugira se vale indicar um parceiro.\n- Nunca prometa preço ou prazo: a Vidal só define isso na proposta.\n- Se vierem vários leads de uma vez, faça um relatório para cada, e no final uma tabela curta ordenada pela nota.\n\n\n# FORMATO DE SAÍDA\nResponda APENAS com um JSON válido, sem texto antes ou depois e sem ```, com exatamente estas chaves:\n{\"summary\": \"2 a 4 frases\", \"needs\": [\"...\"], \"fit\": \"Alta|Média|Baixa|Fora do catálogo\", \"recommended_services\": [\"I2\"], \"fit_reason\": \"...\", \"priority\": \"Alta|Média|Baixa\", \"score\": 0, \"score_breakdown\": \"aderência 25 + clareza 15 + urgência 10 + decisor 10 + perfil 15 = 75\", \"priority_justification\": \"...\", \"missing_info\": [\"...\"], \"next_questions\": [\"...\"], \"next_step\": \"...\"}"
             }
           ]
         }
       },
-      "id": "4331d25d-23f5-40f5-a63c-f9683ede9175",
+      "id": "e1061ed0-fecd-4082-bd55-8cbe6fa6a84c",
       "name": "Evaluate lead (Claude)",
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.4,
@@ -278,7 +278,7 @@
           "temperature": 0.2
         }
       },
-      "id": "2cd0bada-3e07-45d6-8d28-04c86551271d",
+      "id": "c07243dd-3acc-4e5a-8aa4-f8bb37fbd86e",
       "name": "Claude",
       "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
       "typeVersion": 1.3,
@@ -289,9 +289,9 @@
     },
     {
       "parameters": {
-        "jsCode": "// Reads Claude's JSON, maps it to the database enums and builds the email report\nconst leads = $('Build prompt').all().map(i => i.json);\nconst P = { 'Alta': 'high', 'Média': 'medium', 'Media': 'medium', 'Baixa': 'low' };\nconst F = { 'Alta': 'high', 'Média': 'medium', 'Media': 'medium', 'Baixa': 'low', 'Fora do catálogo': 'out_of_scope' };\nconst SRC = { email: 'E-mail', website: 'Formulário do site', whatsapp: 'WhatsApp', referral: 'Indicação', other: 'Outro' };\nconst esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');\nconst ul = a => '<ul>' + (a || []).map(x => `<li>${esc(x)}</li>`).join('') + '</ul>';\nconst ol = a => '<ol>' + (a || []).map(x => `<li>${esc(x)}</li>`).join('') + '</ol>';\nreturn $input.all().map((item, idx) => {\n  const lead = leads[idx];\n  const raw = (item.json.text || '').trim().replace(/^```(json)?/i, '').replace(/```$/, '').trim();\n  let ev; try { ev = JSON.parse(raw); } catch (e) { throw new Error('Claude did not return valid JSON: ' + raw.slice(0, 300)); }\n  const score = Math.max(0, Math.min(100, Math.round(Number(ev.score) || 0)));\n  const color = { high: '#1f9d55', medium: '#FBC105', low: '#888888' }[P[ev.priority]] || '#888888';\n  const html = `<div style=\"font-family:Arial,sans-serif;max-width:640px;margin:auto;color:#111\">\n <div style=\"background:#000;background-image:linear-gradient(#000,#000);padding:18px 24px\"><img src=\"https://vidaltechnologies.com.br/catalogo/logo-email.png\" alt=\"vidal technologies\" height=\"28\" style=\"display:block;height:28px\"><div style=\"color:#FBC105;font-size:13px;letter-spacing:.08em;text-transform:uppercase;margin-top:8px\">Avaliação de lead</div></div>\n <div style=\"padding:20px 24px;border:1px solid #eee;background:#fff\">\n  <p style=\"margin:0 0 6px\"><b>${esc(lead.name || 'Lead sem nome')}</b> · ${esc(lead.company || 'empresa não informada')} · ${esc(SRC[lead.source] || lead.source)}</p>\n  <p style=\"margin:0 0 16px;color:#555\">${esc(lead.email)} ${esc(lead.phone)}</p>\n  <p style=\"display:inline-block;background:${color};color:#000;padding:6px 12px;border-radius:999px;font-weight:bold\">Prioridade ${esc(ev.priority)} · ${score}/100</p>\n  <h3>1. Resumo do lead</h3><p>${esc(ev.summary)}</p>\n  <h3>2. Necessidades e problemas</h3>${ul(ev.needs)}\n  <h3>3. Aderência às soluções</h3><p><b>${esc(ev.fit)}</b> · ${esc((ev.recommended_services || []).join(', '))}<br>${esc(ev.fit_reason)}</p>\n  <h3>4. Prioridade sugerida</h3><p><b>${esc(ev.priority)} (${score}/100)</b> · ${esc(ev.score_breakdown)}<br>${esc(ev.priority_justification)}</p>\n  <h3>5. Informações que ainda faltam</h3>${ul(ev.missing_info)}\n  <h3>6. Perguntas para a próxima conversa</h3>${ol(ev.next_questions)}\n  <h3>7. Próximo passo recomendado</h3><p><b>${esc(ev.next_step)}</b></p>\n  <hr style=\"border:none;border-top:1px solid #eee\"><p style=\"color:#888;font-size:12px\">Mensagem original:<br>${esc(lead.message).replace(/\\n/g,'<br>')}</p>\n </div></div>`;\n  return { json: { ...lead, ev, score, priority: P[ev.priority] || 'low', fit: F[ev.fit] || 'low',\n    email_subject: `[Lead ${ev.priority} · ${score}] ${lead.name || lead.email || 'novo lead'}`, email_html: html } };\n});"
+        "jsCode": "// Reads Claude's JSON, maps it to the database enums and builds the email report\n// Report language: 'pt', 'en' or 'es' (same as in the \"Build prompt\" node)\nconst REPORT_LANGUAGE = 'pt';\nconst T = {\n  pt: { title: 'Avaliação de lead', noName: 'Lead sem nome', noCompany: 'empresa não informada', priority: 'Prioridade', h: ['Resumo do lead', 'Necessidades e problemas', 'Aderência às soluções', 'Prioridade sugerida', 'Informações que ainda faltam', 'Perguntas para a próxima conversa', 'Próximo passo recomendado'], original: 'Mensagem original', newLead: 'novo lead', lv: { 'Alta': 'Alta', 'Média': 'Média', 'Baixa': 'Baixa', 'Fora do catálogo': 'Fora do catálogo' }, src: { email: 'E-mail', website: 'Formulário do site', whatsapp: 'WhatsApp', referral: 'Indicação', other: 'Outro' } },\n  en: { title: 'Lead evaluation', noName: 'Unnamed lead', noCompany: 'company not provided', priority: 'Priority', h: ['Lead summary', 'Needs and problems', 'Fit with our solutions', 'Suggested priority', 'Missing information', 'Questions for the next conversation', 'Recommended next step'], original: 'Original message', newLead: 'new lead', lv: { 'Alta': 'High', 'Média': 'Medium', 'Baixa': 'Low', 'Fora do catálogo': 'Out of scope' }, src: { email: 'Email', website: 'Website form', whatsapp: 'WhatsApp', referral: 'Referral', other: 'Other' } },\n  es: { title: 'Evaluación de lead', noName: 'Lead sin nombre', noCompany: 'empresa no informada', priority: 'Prioridad', h: ['Resumen del lead', 'Necesidades y problemas', 'Adecuación a las soluciones', 'Prioridad sugerida', 'Información pendiente', 'Preguntas para la próxima conversación', 'Siguiente paso recomendado'], original: 'Mensaje original', newLead: 'nuevo lead', lv: { 'Alta': 'Alta', 'Média': 'Media', 'Baixa': 'Baja', 'Fora do catálogo': 'Fuera del catálogo' }, src: { email: 'Correo', website: 'Formulario del sitio', whatsapp: 'WhatsApp', referral: 'Recomendación', other: 'Otro' } },\n}[REPORT_LANGUAGE];\nif (!T) throw new Error('REPORT_LANGUAGE must be pt, en or es');\nconst leads = $('Build prompt').all().map(i => i.json);\nconst P = { 'Alta': 'high', 'Média': 'medium', 'Media': 'medium', 'Baixa': 'low' };\nconst F = { 'Alta': 'high', 'Média': 'medium', 'Media': 'medium', 'Baixa': 'low', 'Fora do catálogo': 'out_of_scope' };\nconst esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');\nconst ul = a => '<ul>' + (a || []).map(x => `<li>${esc(x)}</li>`).join('') + '</ul>';\nconst L = v => T.lv[v] || v;\nconst ol = a => '<ol>' + (a || []).map(x => `<li>${esc(x)}</li>`).join('') + '</ol>';\nreturn $input.all().map((item, idx) => {\n  const lead = leads[idx];\n  const raw = (item.json.text || '').trim().replace(/^```(json)?/i, '').replace(/```$/, '').trim();\n  let ev; try { ev = JSON.parse(raw); } catch (e) { throw new Error('Claude did not return valid JSON: ' + raw.slice(0, 300)); }\n  const score = Math.max(0, Math.min(100, Math.round(Number(ev.score) || 0)));\n  const color = { high: '#1f9d55', medium: '#FBC105', low: '#888888' }[P[ev.priority]] || '#888888';\n  const html = `<div style=\"font-family:Arial,sans-serif;max-width:640px;margin:auto;color:#111\">\n <div style=\"background:#000;background-image:linear-gradient(#000,#000);padding:18px 24px\"><img src=\"https://vidaltechnologies.com.br/catalogo/logo-email.png\" alt=\"vidal technologies\" height=\"28\" style=\"display:block;height:28px\"><div style=\"color:#FBC105;font-size:13px;letter-spacing:.08em;text-transform:uppercase;margin-top:8px\">${T.title}</div></div>\n <div style=\"padding:20px 24px;border:1px solid #eee;background:#fff\">\n  <p style=\"margin:0 0 6px\"><b>${esc(lead.name || T.noName)}</b> · ${esc(lead.company || T.noCompany)} · ${esc(T.src[lead.source] || lead.source)}</p>\n  <p style=\"margin:0 0 16px;color:#555\">${esc(lead.email)} ${esc(lead.phone)}</p>\n  <p style=\"display:inline-block;background:${color};color:#000;padding:6px 12px;border-radius:999px;font-weight:bold\">${T.priority} ${esc(L(ev.priority))} · ${score}/100</p>\n  <h3>1. ${T.h[0]}</h3><p>${esc(ev.summary)}</p>\n  <h3>2. ${T.h[1]}</h3>${ul(ev.needs)}\n  <h3>3. ${T.h[2]}</h3><p><b>${esc(L(ev.fit))}</b> · ${esc((ev.recommended_services || []).join(', '))}<br>${esc(ev.fit_reason)}</p>\n  <h3>4. ${T.h[3]}</h3><p><b>${esc(L(ev.priority))} (${score}/100)</b> · ${esc(ev.score_breakdown)}<br>${esc(ev.priority_justification)}</p>\n  <h3>5. ${T.h[4]}</h3>${ul(ev.missing_info)}\n  <h3>6. ${T.h[5]}</h3>${ol(ev.next_questions)}\n  <h3>7. ${T.h[6]}</h3><p><b>${esc(ev.next_step)}</b></p>\n  <hr style=\"border:none;border-top:1px solid #eee\"><p style=\"color:#888;font-size:12px\">${T.original}:<br>${esc(lead.message).replace(/\\n/g,'<br>')}</p>\n </div></div>`;\n  return { json: { ...lead, ev, score, priority: P[ev.priority] || 'low', fit: F[ev.fit] || 'low',\n    email_subject: `[Lead ${L(ev.priority)} · ${score}] ${lead.name || lead.email || T.newLead}`, email_html: html } };\n});"
       },
-      "id": "e33f03b8-2d90-4352-a096-00fc5a99801b",
+      "id": "5be0d4fe-598d-4511-9721-5287470af6a5",
       "name": "Read evaluation",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -376,7 +376,7 @@
           ]
         }
       },
-      "id": "250768de-d45a-46d0-af18-7ff7508542cf",
+      "id": "b6c5fdb8-d18a-4824-aa78-b4064c773083",
       "name": "Save evaluation",
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
@@ -409,7 +409,7 @@
           ]
         }
       },
-      "id": "e1313c80-5715-456c-be13-7b97a318f619",
+      "id": "e6b519f3-7349-4480-a72f-59e1ec455212",
       "name": "Mark as evaluated",
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
@@ -426,7 +426,7 @@
         "html": "={{ $json.email_html }}",
         "options": {}
       },
-      "id": "bd77a3d3-202d-4716-af29-4a39eef151ca",
+      "id": "b00e5a9b-83cb-4ba4-97a8-bb9e1480dfef",
       "name": "Email report to Vidal",
       "type": "n8n-nodes-base.emailSend",
       "typeVersion": 2.1,
